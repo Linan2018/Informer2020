@@ -34,6 +34,8 @@ class TokenEmbedding(nn.Module):
                 nn.init.kaiming_normal_(m.weight,mode='fan_in',nonlinearity='leaky_relu')
 
     def forward(self, x):
+        # print("embed37", x.shape)
+        # print("embed38", x.permute(0, 2, 1).shape)
         x = self.tokenConv(x.permute(0, 2, 1)).transpose(1,2)
         return x
 
@@ -99,11 +101,14 @@ class DataEmbedding(nn.Module):
 
         self.value_embedding = TokenEmbedding(c_in=c_in, d_model=d_model)
         self.position_embedding = PositionalEmbedding(d_model=d_model)
-        self.temporal_embedding = TemporalEmbedding(d_model=d_model, embed_type=embed_type, freq=freq) if embed_type!='timeF' else TimeFeatureEmbedding(d_model=d_model, embed_type=embed_type, freq=freq)
+        # self.temporal_embedding = TemporalEmbedding(d_model=d_model, embed_type=embed_type, freq=freq) if embed_type!='timeF' else TimeFeatureEmbedding(d_model=d_model, embed_type=embed_type, freq=freq)
 
         self.dropout = nn.Dropout(p=dropout)
 
-    def forward(self, x, x_mark):
-        x = self.value_embedding(x) + self.position_embedding(x) + self.temporal_embedding(x_mark)
+    def forward(self, x):
+        # x = self.value_embedding(x) + self.position_embedding(x) + self.temporal_embedding(x_mark)
+        # print("value_embedding", self.value_embedding(x).shape)
+        # print("position_embedding", self.position_embedding(x).shape)
+        x = self.value_embedding(x) + self.position_embedding(x)
         
         return self.dropout(x)

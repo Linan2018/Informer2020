@@ -140,13 +140,18 @@ class AttentionLayer(nn.Module):
         self.out_projection = nn.Linear(d_values * n_heads, d_model)
         self.n_heads = n_heads
         self.mix = mix
+        self.d_model = d_model
+        self.d_keys = d_keys
 
     def forward(self, queries, keys, values, attn_mask):
         B, L, _ = queries.shape
         _, S, _ = keys.shape
         H = self.n_heads
+        # print("in attn", B, L, S, H, self.d_model, self.d_keys, self.n_heads)
 
-        queries = self.query_projection(queries).view(B, L, H, -1)
+        queries = self.query_projection(queries)
+        # print(queries.shape)
+        queries = queries.view(B, L, H, -1)
         keys = self.key_projection(keys).view(B, S, H, -1)
         values = self.value_projection(values).view(B, S, H, -1)
 

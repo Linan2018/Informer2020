@@ -7,26 +7,29 @@ class ConvLayer(nn.Module):
         super(ConvLayer, self).__init__()
         padding = 1 if torch.__version__>='1.5.0' else 2
         self.downConv = nn.Conv1d(in_channels=c_in,
-                                  out_channels=c_in,
+                                  out_channels=c_in//2,
                                   kernel_size=3,
                                   padding=padding,
                                   padding_mode='circular')
-        self.norm = nn.BatchNorm1d(c_in)
+        self.norm = nn.BatchNorm1d(c_in//2)
         self.activation = nn.ELU()
         self.maxPool = nn.MaxPool1d(kernel_size=3, stride=2, padding=1)
 
     def forward(self, x):
+        # print("ConvLayer in", x.shape)
         x = self.downConv(x.permute(0, 2, 1))
         x = self.norm(x)
         x = self.activation(x)
         x = self.maxPool(x)
         x = x.transpose(1,2)
+        # print("ConvLayer out", x.shape)
         return x
 
 class EncoderLayer(nn.Module):
     def __init__(self, attention, d_model, d_ff=None, dropout=0.1, activation="relu"):
         super(EncoderLayer, self).__init__()
         d_ff = d_ff or 4*d_model
+        self.d_model = d_model
         self.attention = attention
         self.conv1 = nn.Conv1d(in_channels=d_model, out_channels=d_ff, kernel_size=1)
         self.conv2 = nn.Conv1d(in_channels=d_ff, out_channels=d_model, kernel_size=1)
@@ -41,6 +44,8 @@ class EncoderLayer(nn.Module):
         #     x, x, x,
         #     attn_mask = attn_mask
         # ))
+        # print("EncoderLayer d", self.d_model)
+        # print("EncoderLayer in", x.shape)
         new_x, attn = self.attention(
             x, x, x,
             attn_mask = attn_mask
@@ -51,6 +56,7 @@ class EncoderLayer(nn.Module):
         y = self.dropout(self.activation(self.conv1(y.transpose(-1,1))))
         y = self.dropout(self.conv2(y).transpose(-1,1))
 
+        # print("EncoderLayer out", self.norm2(x+y).shape)
         return self.norm2(x+y), attn
 
 class Encoder(nn.Module):
